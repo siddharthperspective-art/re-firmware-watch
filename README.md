@@ -22,9 +22,9 @@ Connected devices → Infotainment settings → Software update.
 - Usage: about 25 checks a day, roughly 775 of the 2,000 free private-repo minutes a month.
 - Manual runs: Actions tab → Tripper Dash firmware watch → Run workflow. Tick "Only send
   a test notification" there to check that alerts still reach your phone.
-- When the token expires, cron-job.org emails you after two failed triggers and GitHub
-  emails before expiry. Regenerate the token on GitHub and paste the new value into the
-  cron-job.org job's Authorization header (`Bearer github_pat_...`).
+- The token ("re-firmware-watch hourly trigger") is set to never expire. If it is ever
+  revoked or regenerated, cron-job.org emails you after two failed triggers; paste the
+  new value into the cron-job.org job's Authorization header (`Bearer github_pat_...`).
 - The ntfy topic is the repository secret `NTFY_TOPIC` (the topic name is the password).
 - After each run the workflow commits `state.json` if anything new was seen, so items
   are only alerted once. Delete `state.json` to start from a fresh baseline.
