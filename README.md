@@ -1,6 +1,6 @@
 # Tripper Dash firmware watch
 
-Daily check for Royal Enfield Himalayan 450 Tripper Dash firmware releases, run for
+Hourly check for Royal Enfield Himalayan 450 Tripper Dash firmware releases, run for
 free on GitHub Actions and pushed to your phone through [ntfy](https://ntfy.sh).
 
 Royal Enfield publishes no firmware feed. Dash firmware ships over the air through
@@ -15,7 +15,8 @@ Connected devices → Infotainment settings → Software update.
 
 ## How it runs
 
-- `.github/workflows/watch.yml` runs daily at 04:07 UTC (09:37 IST) and on demand
+- `.github/workflows/watch.yml` runs hourly at 7 minutes past the hour (24 checks a
+  day, about 744 of the 2,000 free private-repo minutes a month) and on demand
   (Actions tab → Tripper Dash firmware watch → Run workflow). Tick "Only send a test
   notification" there to check that alerts still reach your phone.
 - The ntfy topic is the repository secret `NTFY_TOPIC` (the topic name is the password).

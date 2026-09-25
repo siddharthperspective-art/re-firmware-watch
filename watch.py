@@ -15,7 +15,7 @@ State lives next to this file in state.json. Each source's first successful
 check only records what already exists, so later runs notify about genuinely
 new items.
 
-Runs daily on GitHub Actions (.github/workflows/watch.yml), which commits
+Runs hourly on GitHub Actions (.github/workflows/watch.yml), which commits
 state.json back to the repo. Settings come from config.json and/or the
 WATCH_CHANNELS and NTFY_TOPIC environment variables.
 

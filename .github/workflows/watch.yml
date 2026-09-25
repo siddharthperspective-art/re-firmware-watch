@@ -2,7 +2,7 @@ name: Tripper Dash firmware watch
 
 on:
   schedule:
-    - cron: "7 4 * * *"   # daily 04:07 UTC = 09:37 IST (off the hour; top-of-hour runs get delayed)
+    - cron: "7 * * * *"   # hourly at :07 (off the hour; top-of-hour runs get delayed) = 24 checks/day, ~744 min/month
   workflow_dispatch:       # "Run workflow" button for manual checks
     inputs:
       test:
