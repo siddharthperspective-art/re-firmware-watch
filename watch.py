@@ -15,8 +15,8 @@ State lives next to this file in state.json. Each source's first successful
 check only records what already exists, so later runs notify about genuinely
 new items.
 
-Runs hourly on GitHub Actions (.github/workflows/watch.yml, started by a
-cron-job.org trigger), which commits state.json back to the repo. Settings
+Runs three times a day on GitHub Actions (.github/workflows/watch.yml, started by
+a cron-job.org trigger), which commits state.json back to the repo. Settings
 come from config.json and/or the
 WATCH_CHANNELS and NTFY_TOPIC environment variables.
 
@@ -179,7 +179,7 @@ def quiet_summary(current_versions, failed):
     checked = "Checked at {} IST.".format(datetime.now(IST).strftime("%H:%M"))
     if len(failed) == SOURCE_COUNT:
         return ("Check couldn't run",
-                "{} No source could be reached; retrying next hour.".format(checked), ["warning"])
+                "{} No source could be reached; retrying at the next check.".format(checked), ["warning"])
     parts = [checked]
     if current_versions:
         parts.append("{} is unchanged.".format(", ".join(current_versions)))

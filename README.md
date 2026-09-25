@@ -1,6 +1,6 @@
 # Tripper Dash firmware watch
 
-Hourly check for Royal Enfield Himalayan 450 Tripper Dash firmware releases, run for
+Thrice-daily check for Royal Enfield Himalayan 450 Tripper Dash firmware releases, run for
 free on GitHub Actions and pushed to your phone through [ntfy](https://ntfy.sh).
 
 Royal Enfield publishes no firmware feed. Dash firmware ships over the air through
@@ -15,11 +15,11 @@ Connected devices → Infotainment settings → Software update.
 
 ## How it runs
 
-- A cron-job.org job ("Tripper Dash firmware watch (hourly)") starts the workflow at
-  7 minutes past every hour, India time, by calling GitHub's workflow_dispatch API with a
-  fine-grained token limited to this repo (Actions: read and write). GitHub's own
-  scheduler proved unreliable, so it is only a once-a-day backup (09:52 IST).
-- Usage: about 25 checks a day, roughly 775 of the 2,000 free private-repo minutes a month.
+- A cron-job.org job ("Tripper Dash firmware watch (00:00, 12:00, 21:00 IST)") starts the
+  workflow at 12:00 AM, 12:00 PM and 9:00 PM India time by calling GitHub's
+  workflow_dispatch API with a fine-grained token limited to this repo (Actions: read and
+  write). GitHub's own scheduler proved unreliable here, so the workflow has no schedule.
+- Usage: 3 checks a day, about 93 of the 2,000 free private-repo minutes a month.
 - Manual runs: Actions tab → Tripper Dash firmware watch → Run workflow. Tick "Only send
   a test notification" there to check that alerts still reach your phone.
 - The token ("re-firmware-watch hourly trigger") is set to never expire. If it is ever
@@ -28,7 +28,7 @@ Connected devices → Infotainment settings → Software update.
 - The ntfy topic is the repository secret `NTFY_TOPIC` (the topic name is the password).
 - After every check that finds nothing new, a low-priority "✅ Nothing new found" message
   is sent (shown in the notification shade, no sound or vibration). It names any source
-  that couldn't be reached that hour. Set `NOTIFY_WHEN_QUIET` to `"0"` in the workflow to
+  that couldn't be reached that time. Set `NOTIFY_WHEN_QUIET` to `"0"` in the workflow to
   turn it off; real update alerts are unaffected.
 - After each run the workflow commits `state.json` if anything new was seen, so items
   are only alerted once. Delete `state.json` to start from a fresh baseline.
