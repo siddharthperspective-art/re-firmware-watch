@@ -30,6 +30,7 @@ jobs:
         env:
           WATCH_CHANNELS: ntfy
           NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          NOTIFY_WHEN_QUIET: "1"   # low-priority "Nothing new found" after every quiet check; "0" to stop
         run: |
           if [ -z "$NTFY_TOPIC" ]; then
             echo "::error::Repository secret NTFY_TOPIC is not set"

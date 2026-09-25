@@ -33,7 +33,7 @@ import sys
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -73,11 +73,17 @@ UPDATE_RE = re.compile(
 REDDIT_TITLE_RE = re.compile(
     r"tripper|dash|firmware|\bf?ota\b|software|updat|cluster|tft|version|\bv?\d+\.\d+", re.I)
 
+SOURCE_COUNT = len(APP_STORE_APPS) + 2   # App Store apps + Google News + Reddit
+IST = timezone(timedelta(hours=5, minutes=30), "IST")
+QUIET_PRIORITY = 2   # ntfy "low": listed in the notification shade, no sound or vibration
+
 DEFAULT_CONFIG = {
     # "macos" = Notification Centre on this Mac; "ntfy" = push to phone via ntfy.sh
     "channels": ["macos"],
     "ntfy_server": "https://ntfy.sh",
     "ntfy_topic": "",
+    # Also send a low-priority "Nothing new found" message after every quiet check.
+    "notify_when_quiet": False,
 }
 
 
@@ -156,15 +162,30 @@ def check_reddit():
     return "reddit", items
 
 
-def run_sources():
-    """Yield (key, items) per source; a failing source is logged and skipped."""
-    checks = [lambda a=a: check_app_store(*a) for a in APP_STORE_APPS]
-    checks += [check_google_news, check_reddit]
-    for check in checks:
+def run_sources(failed):
+    """Yield (key, items) per source; a failing source is logged, named in failed, and skipped."""
+    checks = [("App Store", lambda a=a: check_app_store(*a)) for a in APP_STORE_APPS]
+    checks += [("Google News", check_google_news), ("Reddit", check_reddit)]
+    for name, check in checks:
         try:
             yield check()
         except Exception as e:  # network/parse failure: keep the other sources going
-            log("WARN source failed: {}: {}".format(type(e).__name__, e))
+            failed.append(name)
+            log("WARN source failed: {}: {}: {}".format(name, type(e).__name__, e))
+
+
+def quiet_summary(current_versions, failed):
+    """Title, body, and ntfy tags for the message sent after a quiet check."""
+    checked = "Checked at {} IST.".format(datetime.now(IST).strftime("%H:%M"))
+    if len(failed) == SOURCE_COUNT:
+        return ("Check couldn't run",
+                "{} No source could be reached; retrying next hour.".format(checked), ["warning"])
+    parts = [checked]
+    if current_versions:
+        parts.append("{} is unchanged.".format(", ".join(current_versions)))
+    parts.append("Unavailable this time: {}.".format(", ".join(failed)) if failed
+                 else "All sources checked.")
+    return "Nothing new found", " ".join(parts), ["white_check_mark"]
 
 
 # ── Notification channels ───────────────────────────────────────────────
@@ -181,12 +202,14 @@ def notify_macos(title, body, url):
         check=True, capture_output=True)
 
 
-def notify_ntfy(title, body, url, config):
+def notify_ntfy(title, body, url, config, priority=None, tags=None):
     topic = config.get("ntfy_topic", "").strip()
     if not topic:
         raise ValueError("ntfy channel enabled but ntfy_topic is empty in config.json")
     payload = {"topic": topic, "title": title[:250], "message": body[:1000] or " ",
-               "tags": ["motorcycle"]}
+               "tags": tags or ["motorcycle"]}
+    if priority:
+        payload["priority"] = priority
     if url:
         payload["click"] = url
     req = urllib.request.Request(
@@ -197,13 +220,13 @@ def notify_ntfy(title, body, url, config):
     urllib.request.urlopen(req, timeout=TIMEOUT_S).read()
 
 
-def notify(title, body, url, config):
+def notify(title, body, url, config, priority=None, tags=None):
     for channel in config.get("channels", []):
         try:
             if channel == "macos":
                 notify_macos(title, body, url)
             elif channel == "ntfy":
-                notify_ntfy(title, body, url, config)
+                notify_ntfy(title, body, url, config, priority, tags)
             else:
                 log("WARN unknown channel '{}'".format(channel))
         except Exception as e:
@@ -220,6 +243,8 @@ def main(argv):
         config["channels"] = [c.strip() for c in os.environ["WATCH_CHANNELS"].split(",") if c.strip()]
     if os.environ.get("NTFY_TOPIC"):
         config["ntfy_topic"] = os.environ["NTFY_TOPIC"]
+    if os.environ.get("NOTIFY_WHEN_QUIET"):
+        config["notify_when_quiet"] = os.environ["NOTIFY_WHEN_QUIET"].lower() in ("1", "true", "yes")
 
     if "--test" in argv:
         notify("Test notification", "Firmware watch can reach you on: "
@@ -236,8 +261,9 @@ def main(argv):
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     new_items = []
     current_versions = []
+    failed = []
 
-    for key, items in run_sources():
+    for key, items in run_sources(failed):
         source_new = []
         if key.startswith("app:"):
             item = items[0]
@@ -295,6 +321,11 @@ def main(argv):
             log("NEW (not notified) {} | {}".format(it["title"], it["url"]))
     if not new_items:
         log("No new items")
+        # First run already sent "Watch is active"; after that, confirm every quiet check.
+        if config.get("notify_when_quiet") and not first_run:
+            title, body, tags = quiet_summary(current_versions, failed)
+            notify(title, body, "", config, priority=QUIET_PRIORITY, tags=tags)
+            log("NOTIFIED {} | {}".format(title, body))
 
     state["initialised"] = True
     STATE_FILE.write_text(json.dumps(state, indent=2))

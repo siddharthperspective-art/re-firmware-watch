@@ -26,6 +26,10 @@ Connected devices → Infotainment settings → Software update.
   revoked or regenerated, cron-job.org emails you after two failed triggers; paste the
   new value into the cron-job.org job's Authorization header (`Bearer github_pat_...`).
 - The ntfy topic is the repository secret `NTFY_TOPIC` (the topic name is the password).
+- After every check that finds nothing new, a low-priority "✅ Nothing new found" message
+  is sent (shown in the notification shade, no sound or vibration). It names any source
+  that couldn't be reached that hour. Set `NOTIFY_WHEN_QUIET` to `"0"` in the workflow to
+  turn it off; real update alerts are unaffected.
 - After each run the workflow commits `state.json` if anything new was seen, so items
   are only alerted once. Delete `state.json` to start from a fresh baseline.
 - If a run fails (for example the secret is missing), GitHub emails you.
