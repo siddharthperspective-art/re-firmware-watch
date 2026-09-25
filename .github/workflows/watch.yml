@@ -2,8 +2,10 @@ name: Tripper Dash firmware watch
 
 on:
   schedule:
-    - cron: "7 * * * *"   # hourly at :07 (off the hour; top-of-hour runs get delayed) = 24 checks/day, ~744 min/month
-  workflow_dispatch:       # "Run workflow" button for manual checks
+    # Daily backup only. The hourly checks are started by an external cron-job.org job
+    # calling workflow_dispatch, because GitHub's own schedule proved unreliable.
+    - cron: "22 4 * * *"  # 04:22 UTC = 09:52 IST
+  workflow_dispatch:       # hourly trigger from cron-job.org, and the "Run workflow" button
     inputs:
       test:
         description: "Only send a test notification to the phone"

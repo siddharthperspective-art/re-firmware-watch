@@ -15,10 +15,16 @@ Connected devices → Infotainment settings → Software update.
 
 ## How it runs
 
-- `.github/workflows/watch.yml` runs hourly at 7 minutes past the hour (24 checks a
-  day, about 744 of the 2,000 free private-repo minutes a month) and on demand
-  (Actions tab → Tripper Dash firmware watch → Run workflow). Tick "Only send a test
-  notification" there to check that alerts still reach your phone.
+- A cron-job.org job ("Tripper Dash firmware watch (hourly)") starts the workflow at
+  7 minutes past every hour, India time, by calling GitHub's workflow_dispatch API with a
+  fine-grained token limited to this repo (Actions: read and write). GitHub's own
+  scheduler proved unreliable, so it is only a once-a-day backup (09:52 IST).
+- Usage: about 25 checks a day, roughly 775 of the 2,000 free private-repo minutes a month.
+- Manual runs: Actions tab → Tripper Dash firmware watch → Run workflow. Tick "Only send
+  a test notification" there to check that alerts still reach your phone.
+- When the token expires, cron-job.org emails you after two failed triggers and GitHub
+  emails before expiry. Regenerate the token on GitHub and paste the new value into the
+  cron-job.org job's Authorization header (`Bearer github_pat_...`).
 - The ntfy topic is the repository secret `NTFY_TOPIC` (the topic name is the password).
 - After each run the workflow commits `state.json` if anything new was seen, so items
   are only alerted once. Delete `state.json` to start from a fresh baseline.
